@@ -1,0 +1,63 @@
+---
+title: "analiza"
+author: "Mikołaj Data"
+date: "2024-05-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+ori <- read_csv("train.csv")
+View(ori)
+```
+
+```{r}
+ori$Gender <- as.factor(ori$Gender)
+barplot(summary(ori$Gender))
+```
+```{r}
+ori$`Customer Type` <-as.factor(ori$`Customer Type`)
+library("ggplot2")
+library("RColorBrewer")
+# https://r-graph-gallery.com/index.html
+
+coul <- brewer.pal(5, "Set2") 
+barplot(summary(ori$`Customer Type`), col=coul)
+```
+
+```{r}
+ori$satisfaction <- as.factor(ori$satisfaction)
+barplot(summary(ori$satisfaction), col=coul)
+```
+
+```{r}
+install.packages("gfortran")
+install.packages("treemap")
+library(treemap)
+ori$Class <- as.factor(ori$Class)
+
+values <- c(sum(ori$Class == "Eco"), 
+            sum(ori$Class == "Eco Plus"), 
+            sum(ori$Class == "Business"))
+
+groups <- c("Eco", "Eco Plus", "Business")
+df <- data.frame(groups, values)
+treemap(df, index="groups",
+        vSize="values", type="index")
+```
+
+```{r}
+library(dplyr)
+colnames(ori)
+names<-c("Inflight wifi service", "Ease of Online booking", "Food and drink", "Seat comfort",
+         "On-board service", "Baggage handling", "Departure Delay in Minutes",
+         "Departure/Arrival time convenient", "Gate location", "Online boarding",
+         "Inflight entertainment", "Leg room service", "Checkin service",
+         "Arrival Delay in Minutes")
+
+lapply(ori[names] %>% na.omit(), mean)
+```
