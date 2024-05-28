@@ -5,27 +5,47 @@ date: "2024-05-20"
 output: html_document
 ---
 
+```{r}
+install.packages("knitr")
+install.packages("treemap")
+install.packages("readr")
+install.packages("tidyverse")
+install.packages("readr")
+install.packages('cluster')
+install.packages('factoextra')
+install.packages('randomForest')
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Read the data
+Data source: https://www.kaggle.com/datasets/teejmahal20/airline-passenger-satisfaction
+
 ```{r}
 library(readr)
 ori <- read_csv("train.csv")
-View(ori)
+ori <- ori[,-2:0]
+ori <- na.omit(ori)
+ori
 ```
+# Prepare data and visualize
+In case of you wondering this is source of charts ideas:
+https://r-graph-gallery.com/index.html
+
 
 ```{r}
+library("RColorBrewer")
+library("ggplot2")
+
 ori$Gender <- as.factor(ori$Gender)
-barplot(summary(ori$Gender))
+coul <- brewer.pal(6, "Set2") 
+barplot(summary(ori$Gender), col=coul)
 ```
+
 ```{r}
 ori$`Customer Type` <-as.factor(ori$`Customer Type`)
-library("ggplot2")
-library("RColorBrewer")
-# https://r-graph-gallery.com/index.html
-
-coul <- brewer.pal(5, "Set2") 
 barplot(summary(ori$`Customer Type`), col=coul)
 ```
 
@@ -35,8 +55,6 @@ barplot(summary(ori$satisfaction), col=coul)
 ```
 
 ```{r}
-install.packages("gfortran")
-install.packages("treemap")
 library(treemap)
 ori$Class <- as.factor(ori$Class)
 
@@ -61,3 +79,49 @@ names<-c("Inflight wifi service", "Ease of Online booking", "Food and drink", "S
 
 lapply(ori[names] %>% na.omit(), mean)
 ```
+
+```{r}
+ori$`Type of Travel` <- as.factor(ori$`Type of Travel`)
+barplot(summary(ori$`Type of Travel`), col=coul)
+```
+
+# There's time to make some classifiers 8)
+Firstly split data on test and train datasets
+```{r}
+sample <- sample(c(TRUE, FALSE), nrow(df), replace=TRUE, prob=c(0.7,0.3))
+train  <- df[sample, ]
+test   <- df[!sample, ]
+```
+
+```{r}
+plot(ori[1:200,(ncol(ori)-5):ncol(ori)-1], cex=0.5)
+heatmap(as.matrix(ori[1:100,(ncol(ori)-16):ncol(ori)-1]),Colv = NA, Rowv = NA, scale="column")
+```
+
+```{r}
+df <- ori[, -(1:6)]
+df <-df[,1:16]
+df <- scale(df)
+km.out <- kmeans(df, centers=3)
+clustered <- cbind(ori, cluster=km.out$cluster)
+```
+
+Evaluate results
+```{r}
+library(purrr)
+satisfied <-  sum(clustered[,-(1:22)]$satisfaction == "satisfied")
+dissatisfied_or_neutral <- sum(clustered[,-(1:22)]$satisfaction == "neutral or dissatisfied")
+satisfied_clustered_properly <- sum(clustered[,-(1:22)]$satisfaction == "satisfied" 
+                                    & clustered[,-(1:22)]$cluster == 1)
+dissatisfied_clustered_properly <- sum(clustered[,-(1:22)]$satisfaction == "neutral or dissatisfied" 
+                                       & clustered[,-(1:22)]$cluster == 3)
+neutral_clustered_properly <- sum(clustered[,-(1:22)]$satisfaction == "neutral or dissatisfied" & clustered[,-(1:22)]$cluster == 2)
+
+print(paste("Satisfied clustered properly: ", satisfied_clustered_properly/satisfied))
+print(paste("Dissatisfied neutral", (dissatisfied_clustered_properly
+  +neutral_clustered_properly)/dissatisfied_or_neutral))
+```
+Results: Dissapointed but not surprised :(
+
+
+
