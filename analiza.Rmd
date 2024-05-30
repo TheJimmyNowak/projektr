@@ -25,10 +25,10 @@ Data source: https://www.kaggle.com/datasets/teejmahal20/airline-passenger-satis
 
 ```{r}
 library(readr)
-ori <- read_csv("train.csv")
-ori <- ori[,-2:0]
-ori <- na.omit(ori)
-ori
+dat <- read_csv("train.csv")
+dat <- dat[,-2:0]
+dat <- na.omit(dat)
+dat
 ```
 # Prepare data and visualize
 In case of you wondering this is source of charts ideas:
@@ -39,28 +39,28 @@ https://r-graph-gallery.com/index.html
 library("RColorBrewer")
 library("ggplot2")
 
-ori$Gender <- as.factor(ori$Gender)
+dat$Gender <- as.factor(dat$Gender)
 coul <- brewer.pal(6, "Set2") 
-barplot(summary(ori$Gender), col=coul)
+barplot(summary(dat$Gender), col=coul)
 ```
 
 ```{r}
-ori$`Customer Type` <-as.factor(ori$`Customer Type`)
-barplot(summary(ori$`Customer Type`), col=coul)
+dat$`Customer Type` <-as.factor(dat$`Customer Type`)
+barplot(summary(dat$`Customer Type`), col=coul)
 ```
 
 ```{r}
-ori$satisfaction <- as.factor(ori$satisfaction)
-barplot(summary(ori$satisfaction), col=coul)
+dat$satisfaction <- as.factor(dat$satisfaction)
+barplot(summary(dat$satisfaction), col=coul)
 ```
 
 ```{r}
 library(treemap)
-ori$Class <- as.factor(ori$Class)
+dat$Class <- as.factor(dat$Class)
 
-values <- c(sum(ori$Class == "Eco"), 
-            sum(ori$Class == "Eco Plus"), 
-            sum(ori$Class == "Business"))
+values <- c(sum(dat$Class == "Eco"), 
+            sum(dat$Class == "Eco Plus"), 
+            sum(dat$Class == "Business"))
 
 groups <- c("Eco", "Eco Plus", "Business")
 df <- data.frame(groups, values)
@@ -70,58 +70,81 @@ treemap(df, index="groups",
 
 ```{r}
 library(dplyr)
-colnames(ori)
+colnames(dat)
 names<-c("Inflight wifi service", "Ease of Online booking", "Food and drink", "Seat comfort",
          "On-board service", "Baggage handling", "Departure Delay in Minutes",
          "Departure/Arrival time convenient", "Gate location", "Online boarding",
          "Inflight entertainment", "Leg room service", "Checkin service",
          "Arrival Delay in Minutes")
 
-lapply(ori[names] %>% na.omit(), mean)
+lapply(dat[names] %>% na.omit(), mean)
 ```
 
 ```{r}
-ori$`Type of Travel` <- as.factor(ori$`Type of Travel`)
-barplot(summary(ori$`Type of Travel`), col=coul)
+dat$`Type of Travel` <- as.factor(dat$`Type of Travel`)
+barplot(summary(dat$`Type of Travel`), col=coul)
 ```
 
-# There's time to make some classifiers 8)
-Firstly split data on test and train datasets
+# Plot some correlations
 ```{r}
-sample <- sample(c(TRUE, FALSE), nrow(df), replace=TRUE, prob=c(0.7,0.3))
-train  <- df[sample, ]
-test   <- df[!sample, ]
+plot(dat[1:200,(ncol(dat)-5):ncol(dat)-1], cex=0.5)
 ```
-
 ```{r}
-plot(ori[1:200,(ncol(ori)-5):ncol(ori)-1], cex=0.5)
-heatmap(as.matrix(ori[1:100,(ncol(ori)-16):ncol(ori)-1]),Colv = NA, Rowv = NA, scale="column")
+heatmap(as.matrix(dat[1:100,(ncol(dat)-16):ncol(dat)-1]),Colv = NA, Rowv = NA, scale="column")
 ```
-
+# Let's try to divide a satisfaction label on 3 items "dissatisfied", "neutral" and "satisfied"
 ```{r}
-df <- ori[, -(1:6)]
+df <- dat[, -(1:6)]
 df <-df[,1:16]
 df <- scale(df)
 km.out <- kmeans(df, centers=3)
-clustered <- cbind(ori, cluster=km.out$cluster)
+clustered <- cbind(dat, cluster=km.out$cluster)
 ```
 
 Evaluate results
 ```{r}
 library(purrr)
-satisfied <-  sum(clustered[,-(1:22)]$satisfaction == "satisfied")
-dissatisfied_or_neutral <- sum(clustered[,-(1:22)]$satisfaction == "neutral or dissatisfied")
-satisfied_clustered_properly <- sum(clustered[,-(1:22)]$satisfaction == "satisfied" 
-                                    & clustered[,-(1:22)]$cluster == 1)
-dissatisfied_clustered_properly <- sum(clustered[,-(1:22)]$satisfaction == "neutral or dissatisfied" 
-                                       & clustered[,-(1:22)]$cluster == 3)
-neutral_clustered_properly <- sum(clustered[,-(1:22)]$satisfaction == "neutral or dissatisfied" & clustered[,-(1:22)]$cluster == 2)
+satisfied <-  sum(clustered$satisfaction == "satisfied")
+dissatisfied_or_neutral <- sum(clustered$satisfaction == "neutral or dissatisfied")
+satisfied_clustered_properly <- sum(clustered$satisfaction == "satisfied" 
+                                    & clustered$cluster == 1)
+dissatisfied_clustered_properly <- sum(clustered$satisfaction == "neutral or dissatisfied" 
+                                       & clustered$cluster == 3)
+neutral_clustered_properly <- sum(clustered$satisfaction == "neutral or dissatisfied" & clustered$cluster == 2)
 
 print(paste("Satisfied clustered properly: ", satisfied_clustered_properly/satisfied))
 print(paste("Dissatisfied neutral", (dissatisfied_clustered_properly
-  +neutral_clustered_properly)/dissatisfied_or_neutral))
++neutral_clustered_properly)/dissatisfied_or_neutral))
 ```
-Results: Dissapointed but not surprised :(
+Results: Disapointed but not surprised :( clustering in this way is a little bit too random.
 
+```{r}
+clustered$cluster[clustered$satisfaction == "satisfied" & clustered$cluster > 1] <- 1
+clustered$cluster[clustered$satisfaction == "neutral or dissatisfied" & clustered$cluster == 1] <- 4
+clustered <- clustered[, -which(names(clustered) == "satisfaction")]
+```
 
+```{r}
+clustered$cluster <- as.factor(clustered$cluster)
+barplot(summary(clustered$cluster), col=coul)
+```
+# Diffrent aproach to the problem
+https://letsdatascience.com/binning/
+```{r}
+df <- dat[, -(1:6)]
+df <-df[,1:14]
+df_with_means <- cbind(dat, rank_mean=apply(df, 1, mean))
+df_with_means
+```
+In this point we can see that passanger with higher mean are most likely to be satisfied :)
+Calculate this ;)
+```{r}
+print(mean(df_with_means[df_with_means$satisfaction=="satisfied",]$rank_mean))
+print(mean(df_with_means[df_with_means$satisfaction=="neutral or dissatisfied",]$rank_mean))
+```
 
+```{r}
+sample <- sample(c(TRUE, FALSE), nrow(df), replace=TRUE, prob=c(0.7,0.3))
+train  <- df[sample, ]
+test   <- df[!sample, ]
+```
