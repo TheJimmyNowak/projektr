@@ -120,7 +120,7 @@ Results: Disapointed but not surprised :( clustering in this way is a little bit
 
 ```{r}
 clustered$cluster[clustered$satisfaction == "satisfied" & clustered$cluster > 1] <- 1
-clustered$cluster[clustered$satisfaction == "neutral or dissatisfied" & clustered$cluster == 1] <- 4
+clustered$cluster[clustered$satisfaction == "neutral or dissatisfied" & clustered$cluster == 1] <- 2
 clustered <- clustered[, -which(names(clustered) == "satisfaction")]
 ```
 
@@ -142,9 +142,34 @@ Calculate this ;)
 print(mean(df_with_means[df_with_means$satisfaction=="satisfied",]$rank_mean))
 print(mean(df_with_means[df_with_means$satisfaction=="neutral or dissatisfied",]$rank_mean))
 ```
+```{r}
+library(dplyr)
+clustered <- df_with_means %>% mutate(cluster = cut(rank_mean, breaks=c(0, 2, 3.2, 5), labels=c("dissatisfied", "neutral", "satisfied")))
+clustered
+```
+Evaluate results
+```{r}
+library(purrr)
+satisfied <-  sum(clustered$satisfaction == "satisfied")
+dissatisfied_or_neutral <- sum(clustered$satisfaction == "neutral or dissatisfied")
+
+satisfied_clustered_properly <- sum(clustered$satisfaction == "satisfied" 
+                                    & clustered$cluster == "satisfied")
+dissatisfied_clustered_properly <- sum(clustered$satisfaction == "neutral or dissatisfied" 
+                                       & clustered$cluster == "dissatisfied")
+neutral_clustered_properly <- sum(clustered$satisfaction == "neutral or dissatisfied" & clustered$cluster == "neutral")
+
+print(paste("Satisfied clustered properly: ", satisfied_clustered_properly/satisfied))
+print(paste("Dissatisfied neutral", (dissatisfied_clustered_properly
++neutral_clustered_properly)/dissatisfied_or_neutral))
+```
+```{r}
+clustered$cluster[clustered$satisfaction == "satisfied" & clustered$cluster != "satisfied"] <- "satisfied"
+clustered$cluster[clustered$satisfaction == "neutral or dissatisfied" & clustered$cluster == "satisfied"] <- NA
+```
 
 ```{r}
-sample <- sample(c(TRUE, FALSE), nrow(df), replace=TRUE, prob=c(0.7,0.3))
-train  <- df[sample, ]
-test   <- df[!sample, ]
+clustered$cluster <- as.factor(clustered$cluster)
+barplot(summary(clustered$cluster), col=coul)
 ```
+Results: Besides grades from pasangers there are two factors that corelates with satisfaction arrival delay and departure delay
