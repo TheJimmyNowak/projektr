@@ -173,3 +173,41 @@ clustered$cluster <- as.factor(clustered$cluster)
 barplot(summary(clustered$cluster), col=coul)
 ```
 Results: Besides grades from pasangers there are two factors that corelates with satisfaction arrival delay and departure delay
+```{r}
+library(ggplot2)
+library(dplyr)
+
+data <- read.csv("train.csv")
+
+summary_data <- data %>%
+  group_by(Gender, Customer.Type) %>%
+  summarise(Count = n()) %>%
+  mutate(Percentage = Count / sum(Count) * 100)
+
+ggplot(summary_data, aes(x = Gender, y = Count, fill = Customer.Type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = paste0(round(Percentage, 1), "%")), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5) +
+  labs(title = "Number of Loyal and Disloyal Customers by Gender",
+       x = "Gender", y = "Number of Customers") +
+  theme_minimal()
+
+```
+
+```{r}
+summary_data <- data %>%
+  group_by(Type.of.Travel, satisfaction) %>%
+  summarise(Count = n()) %>%
+  mutate(Percentage = Count / sum(Count) * 100)
+
+ggplot(summary_data, aes(x = Type.of.Travel, y = Count, fill = satisfaction)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = paste0(round(Percentage, 1), "%")), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5) +
+  labs(title = "Passenger Satisfaction Based on Type of Travel",
+       x = "Type of Travel", y = "Number of Passengers",
+       fill = "Satisfaction") +
+  theme_minimal()
+```
