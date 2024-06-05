@@ -6,14 +6,14 @@ output: html_document
 ---
 
 ```{r}
-install.packages("knitr")
-install.packages("treemap")
-install.packages("readr")
-install.packages("tidyverse")
-install.packages("readr")
-install.packages('cluster')
-install.packages('factoextra')
-install.packages('randomForest')
+#install.packages("knitr")
+#install.packages("treemap")
+#install.packages("readr")
+#install.packages("tidyverse")
+#install.packages("readr")
+#install.packages('cluster')
+#install.packages('factoextra')
+#install.packages('randomForest')
 ```
 
 ```{r setup, include=FALSE}
@@ -194,7 +194,6 @@ ggplot(summary_data, aes(x = Gender, y = Count, fill = Customer.Type)) +
   theme_minimal()
 
 ```
-
 ```{r}
 summary_data <- data %>%
   group_by(Type.of.Travel, satisfaction) %>%
@@ -210,4 +209,31 @@ ggplot(summary_data, aes(x = Type.of.Travel, y = Count, fill = satisfaction)) +
        x = "Type of Travel", y = "Number of Passengers",
        fill = "Satisfaction") +
   theme_minimal()
+```
+
+```{r}
+
+ggplot(clustered, aes(x = clustered$`Arrival Delay in Minutes`, y = clustered$`Departure Delay in Minutes`)) +
+  geom_hex(
+    colour = "#00FFF7",
+    alpha = 0.8,
+    linewidth = 0.2,
+    bins = 60,
+    )+
+  labs(
+    x = "Czas opóźnienia przylotu",
+    y = "Czas opóźnienia odlotu"
+  )
+
+
+```
+
+```{r}
+
+mean_of_snacks <- mean(clustered$`Food and drink`)
+mean_of_snacks
+mean_of_seat_comfort <- mean(clustered$`Seat comfort`)
+mean_of_seat_comfort
+mean_of_seat_LRS <- mean(clustered$`Leg room service`)
+mean_of_seat_LRS
 ```
