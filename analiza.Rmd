@@ -227,6 +227,13 @@ ggplot(clustered, aes(x = clustered$`Arrival Delay in Minutes`, y = clustered$`D
 
 
 ```
+```{r}
+df[,c("Departure", "Arrival")] = dat[, c("Departure Delay in Minutes", "Arrival Delay in Minutes")]
+set.seed(1)
+
+sample <- sample(c(TRUE, FALSE), nrow(df), replace=TRUE, prob=c(0.7,0.3))
+train  <- df[sample, ]
+test   <- df[!sample, ]
 
 
 ```{r}
@@ -260,7 +267,14 @@ ggplot(avg_data_long, aes(x = Category, y = value, group = variable, color = var
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+
+model <- lm(Arrival ~ Departure, data = train)
+summary(model)
+```
+# It'S time to make some predictions
 ```{r}
+predictions <- predict(model, newdata = test[,c("Departure")])
+
 
 library(ggplot2)
 library(reshape2)
@@ -310,4 +324,18 @@ ggplot(avg_data_long, aes(x = Category, y = value, group = variable, color = var
   ) +
   scale_color_manual(values = c("Business_Travel" = "red", "Personal_Travel" = "blue"))
 
+
+#create scatterplot with fitted regression line
+ggplot(test, aes(x = Arrival, y = Departure)) +
+  geom_point() +
+  stat_smooth(method = "loess", se=TRUE)
+```
+
+```{r}
+mean_of_snacks <- mean(clustered$`Food and drink`)
+mean_of_snacks
+mean_of_seat_comfort <- mean(clustered$`Seat comfort`)
+mean_of_seat_comfort
+mean_of_seat_LRS <- mean(clustered$`Leg room service`)
+mean_of_seat_LRS
 ```
