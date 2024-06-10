@@ -221,8 +221,8 @@ ggplot(clustered, aes(x = clustered$`Arrival Delay in Minutes`, y = clustered$`D
     bins = 60,
     )+
   labs(
-    x = "Czas opóźnienia przylotu",
-    y = "Czas opóźnienia odlotu"
+    x = "Arrival delay time",
+    y = "Departure delay time"
   )
 
 
@@ -235,12 +235,95 @@ sample <- sample(c(TRUE, FALSE), nrow(df), replace=TRUE, prob=c(0.7,0.3))
 train  <- df[sample, ]
 test   <- df[!sample, ]
 
+
+```{r}
+dat2 <- read.csv("train.csv")  
+
+business_data <- subset(dat2, dat2$Type.of.Travel == "Business travel")
+
+personal_data <- subset(dat2, dat2$Type.of.Travel == "Personal Travel")
+
+business_avg <- colMeans(business_data[, c(9:21)])
+
+personal_avg <- colMeans(personal_data[, c(9:21)])
+
+avg_data <- data.frame(Category = names(business_avg),
+                       Business_Travel = business_avg,
+                       Personal_Travel = personal_avg)
+
+library(ggplot2)
+library(reshape2)
+
+avg_data_long <- melt(avg_data, id.vars = "Category")
+
+ggplot(avg_data_long, aes(x = Category, y = value, group = variable, color = variable)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Comparison of ratings for business and private trips",
+       y = "Average rating",
+       color = "Type of travel") +
+  coord_polar() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
 model <- lm(Arrival ~ Departure, data = train)
 summary(model)
 ```
 # It'S time to make some predictions
 ```{r}
 predictions <- predict(model, newdata = test[,c("Departure")])
+
+
+library(ggplot2)
+library(reshape2)
+
+dat2 <- read.csv("train.csv")  
+
+business_data <- subset(dat2, dat2$Type.of.Travel == "Business travel")
+personal_data <- subset(dat2, dat2$Type.of.Travel == "Personal Travel")
+
+
+business_avg <- colMeans(business_data[, c(9:21)])
+personal_avg <- colMeans(personal_data[, c(9:21)])
+
+avg_data <- data.frame(Category = names(business_avg),
+                       Business_Travel = business_avg,
+                       Personal_Travel = personal_avg)
+
+abbreviate_category <- function(category) {
+  parts <- unlist(strsplit(category, "\\."))
+  abbreviated_parts <- substr(parts, 1, 1)
+  paste(abbreviated_parts, collapse = ".")
+}
+
+avg_data$Category <- sapply(avg_data$Category, abbreviate_category)
+
+
+avg_data_long <- melt(avg_data, id.vars = "Category")
+
+
+ggplot(avg_data_long, aes(x = Category, y = value, group = variable, color = variable)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  theme_minimal() +
+  labs(title = "Comparison of ratings for business and private trips",
+       y = "Average rating",
+       color = "Type of travel") +
+  coord_polar() +
+  theme(
+    axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "bottom",
+    legend.box.margin = margin(t = 10, b = 10),
+    plot.margin = margin(20, 20, 20, 20)
+  ) +
+  scale_color_manual(values = c("Business_Travel" = "red", "Personal_Travel" = "blue"))
+
 
 #create scatterplot with fitted regression line
 ggplot(test, aes(x = Arrival, y = Departure)) +
